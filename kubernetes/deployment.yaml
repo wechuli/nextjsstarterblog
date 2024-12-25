@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nextjsblog
+  labels:
+    app: nextjsblog
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nextjsblog
+  template:
+    metadata:
+      labels:
+        app: nextjsblog
+    spec:
+      containers:
+        - name: nextjsblog
+          image: ghcr.io/wechuli/nextjsblog:1
+          ports:
+            - containerPort: 3000
+          resources:
+            requests:
+              memory: "124Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: nextjsblog
+spec:
+  selector:
+    app: nextjsblog
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 3000
+  type: ClusterIP
+
+---
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nextjsblog
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - nextjsblog.wechuliverse.com
+      secretName: nextjsblog-letsencrypt
+  rules:
+    - host: nextjsblog.wechuliverse.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: nextjsblog
+                port:
+                  number: 80
+
+         
